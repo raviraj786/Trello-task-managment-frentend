@@ -62,16 +62,14 @@ const KanbanBoardPage = () => {
 
   return (
     <Container maxWidth="xl" sx={{ py: 3 }}>
-      {/* Breadcrumbs */}
       <Breadcrumbs separator={<NavigateNext fontSize="small" />} sx={{ mb: 3 }}>
         <Link component={RouterLink} to="/projects" color="inherit" sx={{ display: 'flex', alignItems: 'center' }}>
-          <Home sx={{ mr: 0.5 }} fontSize="small" />
+          <Home sx={{ mr: 0.5 , fontWeight:900 }} fontSize="small" />
           Projects
         </Link>
         <Typography color="text.primary">{project.title}</Typography>
       </Breadcrumbs>
 
-      {/* Project Header */}
       <Box sx={{ mb: 4 }}>
         <Typography variant="h4" component="h1" gutterBottom>
           {project.title}

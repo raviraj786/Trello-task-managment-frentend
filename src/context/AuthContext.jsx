@@ -1,14 +1,14 @@
 // src/context/AuthContext.js
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import { authAPI } from '../services/api';
-import toast from 'react-hot-toast';
+import React, { createContext, useContext, useState, useEffect } from "react";
+import { authAPI } from "../services/api";
+import toast from "react-hot-toast";
 
 const AuthContext = createContext();
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {
-    throw new Error('useAuth must be used within AuthProvider');
+    throw new Error("useAuth must be used within AuthProvider");
   }
   return context;
 };
@@ -26,9 +26,11 @@ const normalizeResponse = (response) => {
       data?._id
     ),
     data,
-    message: data?.message || res?.message || '',
+    message: data?.message || res?.message || "",
     token: data?.token || data?.accessToken || null,
-    user: data?.user || (data && (data.name || data.email || data._id) ? data : null)
+    user:
+      data?.user ||
+      (data && (data.name || data.email || data._id) ? data : null),
   };
 };
 
@@ -43,7 +45,7 @@ export const AuthProvider = ({ children }) => {
 
   const checkAuth = async () => {
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem("token");
       if (!token) {
         setLoading(false);
         return;
@@ -55,11 +57,11 @@ export const AuthProvider = ({ children }) => {
       if (fetchedUser) {
         setUser(fetchedUser);
       } else {
-        localStorage.removeItem('token');
+        localStorage.removeItem("token");
       }
     } catch (error) {
-      localStorage.removeItem('token');
-      console.error('Auth check failed:', error);
+      localStorage.removeItem("token");
+      console.error("Auth check failed:", error);
     } finally {
       setLoading(false);
     }
@@ -69,28 +71,35 @@ export const AuthProvider = ({ children }) => {
     try {
       setLoading(true);
       const response = await authAPI.login({ email, password });
-      const { success, data, message, token, user: respUser } = normalizeResponse(response);
+      const {
+        success,
+        data,
+        message,
+        token,
+        user: respUser,
+      } = normalizeResponse(response);
 
       if (success) {
         const finalToken = token || data?.token || data?.accessToken || null;
         const finalUser = respUser || data?.user || data;
 
-        if (finalToken) localStorage.setItem('token', finalToken);
+        if (finalToken) localStorage.setItem("token", finalToken);
         if (finalUser) {
           setUser(finalUser);
-          localStorage.setItem('user', JSON.stringify(finalUser));
+          localStorage.setItem("user", JSON.stringify(finalUser));
         }
 
-        toast.success('Login successful!');
-        return { success: true, message: message || 'Login successful' };
+        toast.success("Login successful!");
+        return { success: true, message: message || "Login successful" };
       } else {
-        const errMsg = message || 'Login failed';
+        const errMsg = message || "Login failed";
         toast.error(errMsg);
         return { success: false, message: errMsg };
       }
     } catch (err) {
-      console.error('Login error:', err);
-      const errMsg = err?.response?.data?.message || err?.message || 'Server error';
+      console.error("Login error:", err);
+      const errMsg =
+        err?.response?.data?.message || err?.message || "Server error";
       toast.error(errMsg);
       return { success: false, message: errMsg };
     } finally {
@@ -102,28 +111,35 @@ export const AuthProvider = ({ children }) => {
     try {
       setLoading(true);
       const response = await authAPI.register({ name, email, password });
-      const { success, data, message, token, user: respUser } = normalizeResponse(response);
+      const {
+        success,
+        data,
+        message,
+        token,
+        user: respUser,
+      } = normalizeResponse(response);
 
       if (success) {
         const finalToken = token || data?.token || data?.accessToken || null;
         const finalUser = respUser || data?.user || data;
 
-        if (finalToken) localStorage.setItem('token', finalToken);
+        if (finalToken) localStorage.setItem("token", finalToken);
         if (finalUser) {
           setUser(finalUser);
-          localStorage.setItem('user', JSON.stringify(finalUser));
+          localStorage.setItem("user", JSON.stringify(finalUser));
         }
 
-        toast.success('Registration successful!');
-        return { success: true, message: message || 'Registration successful' };
+        toast.success("Registration successful!");
+        return { success: true, message: message || "Registration successful" };
       } else {
-        const errMsg = message || 'Registration failed';
+        const errMsg = message || "Registration failed";
         toast.error(errMsg);
         return { success: false, message: errMsg };
       }
     } catch (err) {
-      console.error('Register error:', err);
-      const errMsg = err?.response?.data?.message || err?.message || 'Server error';
+      console.error("Register error:", err);
+      const errMsg =
+        err?.response?.data?.message || err?.message || "Server error";
       toast.error(errMsg);
       return { success: false, message: errMsg };
     } finally {
@@ -132,10 +148,10 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
     setUser(null);
-    toast.success('Logged out successfully');
+    toast.success("Logged out successfully");
   };
 
   const value = {
@@ -144,7 +160,7 @@ export const AuthProvider = ({ children }) => {
     login,
     register,
     logout,
-    isAuthenticated: !!user
+    isAuthenticated: !!user,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
