@@ -1,4 +1,3 @@
-// utils/localTaskSync.js
 export const saveTasksToLocal = (projectId, tasks) => {
   try {
     const key = `tasks_${projectId}`;

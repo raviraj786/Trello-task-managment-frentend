@@ -1,14 +1,14 @@
-// src/services/api.js
+
 import axios from "axios";
 
-const API_BASE_URL = "http://localhost:5000/api";
+const API_BASE_URL = "https://trello-task-mangment-backend.onrender.com/api";
 
 const api = axios.create({
   baseURL: API_BASE_URL,
   headers: {
     "Content-Type": "application/json",
   },
-  // withCredentials: false, // enable if using cookies+sessions
+
 });
 
 // Attach token automatically
@@ -22,8 +22,7 @@ api.interceptors.request.use(
 );
 
 // RESPONSE INTERCEPTOR
-// - On success: return response.data directly (simpler for callers).
-// - On error: create an Error object carrying status and payload for callers.
+
 api.interceptors.response.use(
   (response) => {
     // Return only response.data so callers get the API payload directly.
@@ -41,16 +40,13 @@ api.interceptors.response.use(
     const e = new Error(message);
     e.status = status;
     e.payload = payload;
-    // Optional: keep original axios error for deep debugging
     e.original = error;
-    // If unauthorized, clear token and redirect (you already had this behaviour)
+   
     if (status === 401) {
       try {
         localStorage.removeItem("token");
         localStorage.removeItem("user");
-        // avoid forcing redirect in library; let caller handle redirection if needed.
-        // But if you want immediate redirect uncomment next line:
-        // window.location.href = '/login';
+       
       } catch (err) {
         // ignore storage errors
       }
@@ -60,10 +56,9 @@ api.interceptors.response.use(
   }
 );
 
-// AUTH APIs (they now receive API payload directly because interceptor returns response.data)
+
 export const authAPI = {
   register: async (userData) => {
-    // Let errors bubble up as Error with .status and .payload
     const data = await api.post("/auth/register", userData);
     return data; // data is response.data from server
   },
@@ -79,7 +74,7 @@ export const authAPI = {
   },
 };
 
-// Project APIs (same pattern)
+// Project APIs
 export const projectAPI = {
   getProjects: async () => {
     return await api.get("/projects");

@@ -1,4 +1,3 @@
-// src/components/TaskDetails.jsx
 import React, { useState, useEffect } from "react";
 import { Dialog, DialogTitle, DialogContent, DialogActions, Typography, TextField, Button, Box, Chip, Avatar, IconButton, Divider, Select, MenuItem, FormControl } from "@mui/material";
 import { Close, Edit, Save, Cancel, Person, Label as LabelIcon } from "@mui/icons-material";
