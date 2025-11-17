@@ -1,18 +1,24 @@
-
 import axios from "axios";
 
 const API_BASE_URL = "http://localhost:5000/api";
 // const API_BASE_URL = "https://trello-task-mangment-backend.onrender.com/api";
 
+
+
+
 const api = axios.create({
   baseURL: API_BASE_URL,
-  headers: {
+    headers: {
     "Content-Type": "application/json",
   },
-
+  timeout: 15000,
 });
 
-// Attach token automatically
+
+
+
+
+
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem("token");
@@ -22,15 +28,12 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// RESPONSE INTERCEPTOR
 
 api.interceptors.response.use(
   (response) => {
-    // Return only response.data so callers get the API payload directly.
     return response.data;
   },
   (error) => {
-    // Try to extract useful information
     const status = error?.response?.status;
     const payload = error?.response?.data;
     const serverMessage =
@@ -61,7 +64,7 @@ api.interceptors.response.use(
 export const authAPI = {
   register: async (userData) => {
     const data = await api.post("/auth/register", userData);
-    return data; // data is response.data from server
+    return data; 
   },
 
   login: async (credentials) => {
@@ -74,6 +77,8 @@ export const authAPI = {
     return data;
   },
 };
+
+
 
 // Project APIs
 export const projectAPI = {
@@ -96,18 +101,73 @@ export const projectAPI = {
 
 // Task APIs
 export const taskAPI = {
-  getTasks: (projectId) => api.get(`/projects/${projectId}/tasks`),
-  createTask: (projectId, data) =>
-    api.post(`/projects/${projectId}/tasks`, data),
-  deleteTask: (projectId, taskId) =>
-    api.delete(`/projects/${projectId}/tasks/${taskId}`),
-  updateTaskPosition: (projectId, taskId, { status, position }) =>
-    api.patch(`/projects/${projectId}/tasks/${taskId}/position`, {
-      status,
-      position,
-    }),
-  bulkUpdateTasks: (projectId, tasks) =>
-    api.post(`/projects/${projectId}/tasks/bulk`, { tasks }),
+ async getTasks(projectId) {
+    try {
+      const res = await api.get(`/projects/${projectId}/tasks`);
+      return { success: true, data: res.data };
+    } catch (err) {
+      console.error("taskAPI.getTasks error:", err?.response?.data || err.message);
+      return { success: false, error: err };
+    }
+  },
+
+
+
+
+
+
+
+async createTask(projectId, task) {
+    try {
+      const res = await api.post(`/projects/${projectId}/tasks`, { task });
+      console.log(res.data,"sssssssssss")
+      return { success: true, data: res.data };
+    } catch (err) {
+      console.error("taskAPI.createTask error:", err?.response?.data || err.message);
+      return { success: false, error: err };
+    }
+  },
+
+
+
+   async updateTask(projectId, taskId, fields) {
+    try {
+      const res = await api.put(`/projects/${projectId}/tasks/${taskId}`, { fields });
+      return { success: true, data: res.data };
+    } catch (err) {
+      console.error("taskAPI.updateTask error:", err?.response?.data || err.message);
+      return { success: false, error: err };
+    }
+  },
+
+
+
+  async deleteTask(projectId, taskId) {
+    try {
+      const res = await api.delete(`/projects/${projectId}/tasks/${taskId}`);
+      return { success: true, data: res.data };
+    } catch (err) {
+      console.error("taskAPI.deleteTask error:", err?.response?.data || err.message);
+      return { success: false, error: err };
+    }
+  },
+
+
+
+ // bulk update: server expects array of tasks representing whole board
+  async bulkUpdateTasks(projectId, tasks) {
+    try {
+      const res = await api.post(`/projects/${projectId}/tasks/bulk`, { tasks });
+      return { success: true, data: res.data };
+    } catch (err) {
+      console.error("taskAPI.bulkUpdateTasks error:", err?.response?.data || err.message);
+      return { success: false, error: err };
+    }
+  },
+
+
+
+
 };
 
 export default api;

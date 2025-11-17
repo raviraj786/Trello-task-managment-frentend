@@ -29,6 +29,7 @@ import {
   DndContext,
   closestCenter,
   PointerSensor,
+  TouchSensor,
   KeyboardSensor,
   useSensor,
   useSensors,
@@ -47,7 +48,7 @@ import { taskAPI } from "../services/api";
 import toast from "react-hot-toast";
 import { saveTasksToLocal, loadTasksFromLocal } from "../utils/localTaskSync";
 
-/* ---------- Sortable Task Card ---------- */
+/* ---------- Sortable Task Card (unchanged logic but smaller & styled) ---------- */
 const SortableTaskCard = ({ task, onDelete, onAddComment, onEditTask }) => {
   const {
     attributes,
@@ -56,40 +57,26 @@ const SortableTaskCard = ({ task, onDelete, onAddComment, onEditTask }) => {
     transform,
     transition,
     isDragging,
-  } = useSortable({
-    id: task._id,
-  });
+  } = useSortable({ id: task._id });
 
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-    opacity: isDragging ? 0.5 : 1,
+    opacity: isDragging ? 0.6 : 1,
   };
 
   const handleDelete = (e) => {
     e.stopPropagation();
-    console.log("🔄 DELETE BUTTON CLICKED:", {
-      taskId: task._id,
-      status: task.status,
-      taskTitle: task.title,
-    });
     onDelete(task._id, task.status);
   };
 
   const handleEdit = (e) => {
     e.stopPropagation();
-    console.log("🔄 EDIT BUTTON CLICKED:", {
-      taskId: task._id,
-      task,
-    });
     onEditTask(task);
   };
 
   const handleComment = (e) => {
     e.stopPropagation();
-    console.log("🔄 COMMENT BUTTON CLICKED:", {
-      taskId: task._id,
-    });
     onAddComment(task);
   };
 
@@ -99,13 +86,14 @@ const SortableTaskCard = ({ task, onDelete, onAddComment, onEditTask }) => {
         sx={{
           mb: 1,
           cursor: "grab",
-          "&:hover": { boxShadow: 3 },
-          fontSize: "0.8rem",
-          border: isDragging ? "2px solid blue" : "none",
+          fontSize: "0.76rem",
+          borderRadius: 2,
+          boxShadow: 2,
+          overflow: "visible",
         }}
       >
-        <CardContent sx={{ p: 1.5 }}>
-          <Typography variant="subtitle2" fontWeight="bold">
+        <CardContent sx={{ p: 1 }}>
+          <Typography variant="subtitle2" fontWeight="700" noWrap>
             {task.title}
             <Typography
               component="span"
@@ -113,7 +101,9 @@ const SortableTaskCard = ({ task, onDelete, onAddComment, onEditTask }) => {
               color="text.secondary"
               sx={{ ml: 1 }}
             >
-              (ID: {task._id})
+              {task.isLocal
+                ? "(local)"
+                : `(id:${String(task._id).slice(0, 6)})`}
             </Typography>
           </Typography>
 
@@ -121,90 +111,40 @@ const SortableTaskCard = ({ task, onDelete, onAddComment, onEditTask }) => {
             <Typography
               variant="caption"
               color="text.secondary"
-              sx={{ mt: 0.5, display: "block" }}
+              sx={{ mt: 0.4, display: "block" }}
+              noWrap
             >
               {task.description}
             </Typography>
           )}
 
-          {task.assignee && (
-            <Box display="flex" alignItems="center" gap={0.5} mt={0.5}>
-              <Avatar sx={{ width: 20, height: 20, fontSize: "0.65rem" }}>
-                {task.assignee.name?.[0] || "U"}
-              </Avatar>
-              <Typography variant="caption">{task.assignee.name}</Typography>
-            </Box>
-          )}
-
-          {task.dueDate && (
-            <Chip
-              label={new Date(task.dueDate).toLocaleDateString()}
-              size="small"
-              color={new Date(task.dueDate) < new Date() ? "error" : "default"}
-              sx={{ mt: 0.5 }}
-            />
-          )}
-
-          {task.isLocal && (
-            <Chip
-              label="Unsynced"
-              size="small"
-              color="secondary"
-              sx={{ mt: 0.5 }}
-            />
-          )}
+          <Box display="flex" alignItems="center" gap={0.5} mt={0.5}>
+            <Avatar sx={{ width: 20, height: 20, fontSize: "0.65rem" }}>
+              {task.assignee?.name?.[0] || "U"}
+            </Avatar>
+            <Typography variant="caption" sx={{ mr: 1 }}>
+              {task.assignee?.name || "Unassigned"}
+            </Typography>
+            {task.dueDate && (
+              <Chip
+                label={new Date(task.dueDate).toLocaleDateString()}
+                size="small"
+                sx={{ ml: "auto" }}
+              />
+            )}
+          </Box>
         </CardContent>
 
         <Box display="flex" justifyContent="space-between" p={0.5}>
           <Box>
             <IconButton
               size="small"
-              onPointerDown={(e) => {
-                e.stopPropagation();
-                if (e.nativeEvent.stopImmediatePropagation) {
-                  e.nativeEvent.stopImmediatePropagation();
-                }
-              }}
-              onMouseDown={(e) => {
-                e.stopPropagation();
-                if (e.nativeEvent.stopImmediatePropagation) {
-                  e.nativeEvent.stopImmediatePropagation();
-                }
-              }}
-              onClick={(e) => {
-                e.stopPropagation();
-                if (e.nativeEvent.stopImmediatePropagation) {
-                  e.nativeEvent.stopImmediatePropagation();
-                }
-                handleComment(e);
-              }}
+              onClick={handleComment}
               title="Add Comment"
             >
               <Comment fontSize="small" />
             </IconButton>
-            <IconButton
-              size="small"
-              onPointerDown={(e) => {
-                e.stopPropagation();
-                if (e.nativeEvent.stopImmediatePropagation) {
-                  e.nativeEvent.stopImmediatePropagation();
-                }
-              }}
-              onMouseDown={(e) => {
-                e.stopPropagation();
-                if (e.nativeEvent.stopImmediatePropagation) {
-                  e.nativeEvent.stopImmediatePropagation();
-                }
-              }}
-              onClick={(e) => {
-                e.stopPropagation();
-                if (e.nativeEvent.stopImmediatePropagation) {
-                  e.nativeEvent.stopImmediatePropagation();
-                }
-                handleEdit(e);
-              }}
-              title="Edit Task"
-            >
+            <IconButton size="small" onClick={handleEdit} title="Edit Task">
               <Edit fontSize="small" />
             </IconButton>
           </Box>
@@ -212,28 +152,10 @@ const SortableTaskCard = ({ task, onDelete, onAddComment, onEditTask }) => {
           <IconButton
             size="small"
             color="error"
-            onPointerDown={(e) => {
-              e.stopPropagation();
-              if (e.nativeEvent.stopImmediatePropagation) {
-                e.nativeEvent.stopImmediatePropagation();
-              }
-            }}
-            onMouseDown={(e) => {
-              e.stopPropagation();
-              if (e.nativeEvent.stopImmediatePropagation) {
-                e.nativeEvent.stopImmediatePropagation();
-              }
-            }}
-            onClick={(e) => {
-              e.stopPropagation();
-              if (e.nativeEvent.stopImmediatePropagation) {
-                e.nativeEvent.stopImmediatePropagation();
-              }
-              handleDelete(e);
-            }}
+            onClick={handleDelete}
             title="Delete Task"
           >
-            <Delete fontSize="large" />
+            <Delete fontSize="small" />
           </IconButton>
         </Box>
       </Card>
@@ -241,7 +163,7 @@ const SortableTaskCard = ({ task, onDelete, onAddComment, onEditTask }) => {
   );
 };
 
-/* ---------- Column ---------- */
+/* ---------- Column (smaller + colorful) ---------- */
 const SortableColumn = ({
   column,
   tasks,
@@ -252,46 +174,46 @@ const SortableColumn = ({
 }) => {
   const taskIds = tasks.map((t) => t._id);
 
-  // console.log(`📊 Column ${column.key} tasks:`, tasks);
-
   return (
     <Paper
       sx={{
-        minWidth: 250,
-        flex: 1,
+        minWidth: 220,
+        maxWidth: 320,
+        flex: "0 0 280px",
         p: 1,
-        backgroundColor: "grey.50",
-        minHeight: 400,
-        maxHeight: "80vh",
+        background: `linear-gradient(180deg, ${column.bgStart}, ${column.bgEnd})`,
+        minHeight: 320,
+        maxHeight: "72vh",
         overflowY: "auto",
-        border: "1px solid #ddd",
+        borderRadius: 2,
+        border: "1px solid rgba(0,0,0,0.08)",
       }}
     >
       <Typography
         variant="subtitle1"
         gutterBottom
         sx={{
-          color: `${column.color}.main`,
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
         }}
       >
-        <span>
-          {column.title}
-          <Chip
-            label={tasks.length}
-            size="small"
-            color={column.color}
-            sx={{ ml: 1 }}
+        <span style={{ display: "flex", gap: 8, alignItems: "center" }}>
+          <Box
+            sx={{
+              width: 10,
+              height: 10,
+              borderRadius: "50%",
+              backgroundColor: column.dot,
+            }}
           />
+          <strong>{column.title}</strong>
+          <Chip label={tasks.length} size="small" sx={{ ml: 1 }} />
         </span>
         <IconButton
           size="small"
-          onClick={() => {
-            // console.log(`➕ ADD TASK TO COLUMN: ${column.key}`);
-            onAddTask(column.key);
-          }}
+          onClick={() => onAddTask(column.key)}
+          title="Add Task"
         >
           <Add />
         </IconButton>
@@ -315,15 +237,14 @@ const SortableColumn = ({
           {tasks.length === 0 && (
             <Box
               sx={{
-                border: "2px dashed grey",
+                border: "2px dashed rgba(255,255,255,0.4)",
                 borderRadius: 1,
                 p: 1.5,
                 textAlign: "center",
+                color: "rgba(255,255,255,0.85)",
               }}
             >
-              <Typography variant="caption" color="text.secondary">
-                Drop tasks here
-              </Typography>
+              <Typography variant="caption">Drop tasks here</Typography>
             </Box>
           )}
         </Box>
@@ -351,256 +272,168 @@ const DragDropKanban = ({ projectId }) => {
   const [commentText, setCommentText] = useState("");
 
   const sensors = useSensors(
-    useSensor(PointerSensor),
+    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
+    useSensor(TouchSensor, {
+      activationConstraint: { delay: 150, tolerance: 5 },
+    }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   );
 
   useEffect(() => {
-    // console.log("🚀 Kanban Component Mounted with projectId:", projectId);
+    console.log("🚀 Kanban mounted for project:", projectId);
     loadTasks();
+    // eslint-disable-next-line
   }, [projectId]);
 
   const loadTasks = async () => {
     setLoading(true);
     try {
-      // console.log("📥 Loading tasks for project:", projectId);
-
-      // Try to load from local storage first
       const localTasks = loadTasksFromLocal(projectId);
       if (localTasks) {
-        console.log("📂 Loaded from local storage:", localTasks);
+        console.log("📂 loaded local tasks", localTasks);
         setTasks(localTasks);
         setHasUnsyncedChanges(true);
       }
 
-      // Then try to fetch from server
-      // console.log("🌐 Fetching from server...");
       const { success, data } = await taskAPI.getTasks(projectId);
+
+
       if (success && data) {
         const normalized = {
           todo: data.todo || [],
           inprogress: data.inprogress || [],
           done: data.done || [],
         };
-        // console.log("✅ Server data received:", normalized);
         setTasks(normalized);
         saveTasksToLocal(projectId, normalized);
         setHasUnsyncedChanges(false);
+        console.log("🌐 loaded server task ,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,s", normalized);
+      } else {
+        console.warn("⚠ no server tasks or API returned failure");
       }
-    } catch (error) {
-      console.log(" Error loading tasks:", error.message);
-      // console.log("📦 Using local tasks only");
+    } catch (err) {
+      console.error("❌ loadTasks error:", err);
+      toast.error("Could not load from server — using local data if present");
     } finally {
       setLoading(false);
-      // console.log("📊 Final tasks state:", tasks);
     }
   };
 
   const saveAndMark = (newTasks) => {
-    // console.log("💾 Saving tasks:", newTasks);
     setTasks(newTasks);
     saveTasksToLocal(projectId, newTasks);
     setHasUnsyncedChanges(true);
-  };
-
-  /* Debug Functions */
-  const debugTasks = () => {
-    // console.log("🐛 === DEBUG TASKS ===");
-    // console.log("📋 All Tasks:", tasks);
-    // console.log("📊 Task Counts:", {
-    //   todo: tasks.todo.length,
-    //   inprogress: tasks.inprogress.length,
-    //   done: tasks.done.length,
-    //   total: tasks.todo.length + tasks.inprogress.length + tasks.done.length
-    // });
-
-    // Show all task IDs
-    const allTasks = [...tasks.todo, ...tasks.inprogress, ...tasks.done];
-    // console.log("🆔 All Task IDs:", allTasks.map(t => ({ id: t._id, title: t.title, status: t.status })));
-
-    // Check for duplicates
-    const taskIds = allTasks.map((t) => t._id);
-    const duplicates = taskIds.filter(
-      (id, index) => taskIds.indexOf(id) !== index
-    );
-    if (duplicates.length > 0) {
-      // console.warn("⚠️ DUPLICATE TASK IDs:", duplicates);
-    }
+    console.log("💾 saved local state,     unsynced");
   };
 
   const addTestTask = () => {
-    // console.log("🧪 Adding test task...");
-    const testTask = {
-      _id: `test_${Date.now()}`,
-      title: `Test Task ${tasks.todo.length + 1}`,
-      description: "This is a test task for debugging",
+    const newTask = {
+      _id: `local_${Date.now()}`,
+      title: `Test ${Date.now().toString().slice(-4)}`,
+      description: "quick test",
       status: "todo",
       isLocal: true,
       comments: [],
     };
-
-    const updatedTasks = {
-      ...tasks,
-      todo: [...tasks.todo, testTask],
-    };
-
-    saveAndMark(updatedTasks);
-    toast.success("Test task added");
+    const updated = { ...tasks, todo: [...tasks.todo, newTask] };
+    saveAndMark(updated);
+    toast.success("Local test task added");
   };
 
   /* Drag & Drop */
   const handleDragEnd = (event) => {
     const { active, over } = event;
-    // console.log("🎯 Drag End:", { active: active?.id, over: over?.id });
-
     setActiveTask(null);
-    if (!over) {
-      // console.log("❌ No drop target");
-      return;
-    }
 
+    if (!over) return;
     const activeId = active.id;
-
-    // Find source column and task
+    // find source & target col
     let sourceCol = null;
     let task = null;
-
     Object.entries(tasks).forEach(([colKey, colTasks]) => {
-      const foundTask = colTasks.find((t) => t._id === activeId);
-      if (foundTask) {
+      const found = colTasks.find((t) => t._id === activeId);
+      if (found) {
         sourceCol = colKey;
-        task = foundTask;
+        task = found;
       }
     });
-
-    // console.log("🔍 Found task:", { sourceCol, task: task?.title });
-
     if (!task) {
-      console.log("❌ Task not found");
+      console.warn("task not found on drag end:", activeId);
       return;
     }
 
     const targetCol =
       over.data?.current?.sortable?.containerId || over.id || sourceCol;
-    // console.log("🎯 Target column:", targetCol);
 
     if (sourceCol === targetCol) {
-      // Reorder within same column
+      // reorder within same column
       const oldIndex = tasks[sourceCol].findIndex((t) => t._id === activeId);
       const newIndex = tasks[sourceCol].findIndex((t) => t._id === over.id);
-
-      // console.log("🔄 Reordering:", { sourceCol, oldIndex, newIndex });
-
-      if (oldIndex !== newIndex && newIndex !== -1) {
+      if (oldIndex !== -1 && newIndex !== -1 && oldIndex !== newIndex) {
         const newCol = arrayMove(tasks[sourceCol], oldIndex, newIndex);
-        saveAndMark({ ...tasks, [sourceCol]: newCol });
-        // console.log("✅ Reorder completed");
+        const updated = { ...tasks, [sourceCol]: newCol };
+        saveAndMark(updated);
+        console.log("🔀 reordered in", sourceCol, activeId);
       }
     } else {
-      // Move to different column
-      // console.log("🚚 Moving to different column:", { sourceCol, targetCol });
-
+      // move between columns
       const sourceTasks = tasks[sourceCol].filter((t) => t._id !== activeId);
-      const targetTasks = [...tasks[targetCol]];
       const updatedTask = { ...task, status: targetCol };
-
-      targetTasks.push(updatedTask);
-      saveAndMark({
+      const targetTasks = [...tasks[targetCol], updatedTask];
+      const updated = {
         ...tasks,
         [sourceCol]: sourceTasks,
         [targetCol]: targetTasks,
-      });
-
-      // console.log("✅ Move completed");
+      };
+      saveAndMark(updated);
+      console.log("➡ moved", activeId, "from", sourceCol, "to", targetCol);
     }
   };
 
-  /* Add/Edit Task */
+  /* Add/Edit Task (local) */
   const handleAddOrUpdateTask = (e) => {
     e.preventDefault();
-    // console.log("📝 Form submitted:", formData);
-
     if (!formData.title.trim()) {
-      toast.error("Title is required");
+      toast.error("Title required");
       return;
     }
-
-    const taskData = {
-      title: formData.title.trim(),
-      description: formData.description.trim(),
-      status: formData.status,
-      isLocal: true,
-    };
-
+    const td = formData.status || "todo";
     if (formData._id) {
-      // Update existing task
-      // console.log("✏️ Updating task:", formData._id);
-
+      // update
       const updatedTasks = { ...tasks };
-
-      // Remove from current column
+      // remove old instance
       Object.keys(updatedTasks).forEach((col) => {
-        const originalLength = updatedTasks[col].length;
         updatedTasks[col] = updatedTasks[col].filter(
           (t) => t._id !== formData._id
         );
-        // console.log(`🗑️ Column ${col}: ${originalLength} -> ${updatedTasks[col].length}`);
       });
-
-      // Add to new column with updated data
-      const existingTask = [
-        ...tasks.todo,
-        ...tasks.inprogress,
-        ...tasks.done,
-      ].find((t) => t._id === formData._id);
-
-      const updatedTask = {
-        ...existingTask,
-        ...taskData,
-      };
-
-      updatedTasks[formData.status] = [
-        ...updatedTasks[formData.status],
-        updatedTask,
-      ];
-
-      // console.log("✅ Final updated tasks:", updatedTasks);
+      const prev =
+        [...tasks.todo, ...tasks.inprogress, ...tasks.done].find(
+          (t) => t._id === formData._id
+        ) || {};
+      const updatedTask = { ...prev, ...formData, isLocal: true };
+      updatedTasks[td] = [...updatedTasks[td], updatedTask];
       saveAndMark(updatedTasks);
-      toast.success("Task updated locally");
+      toast.success("Updated locally");
     } else {
-      // Add new task
-      // console.log("🆕 Adding new task");
+      // create
       const newTask = {
-        ...taskData,
-        _id: `local_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        _id: `local_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+        title: formData.title.trim(),
+        description: formData.description || "",
+        status: td,
+        isLocal: true,
         comments: [],
       };
-
-      const updatedTasks = {
-        ...tasks,
-        [formData.status]: [...tasks[formData.status], newTask],
-      };
-
-      // console.log("✅ New task added:", newTask);
-      saveAndMark(updatedTasks);
-      toast.success("Task added locally");
+      const updated = { ...tasks, [td]: [...tasks[td], newTask] };
+      saveAndMark(updated);
+      toast.success("Created locally");
     }
-
     setOpenDialog(false);
-    resetForm();
-  };
-
-  const resetForm = () => {
-    setFormData({
-      title: "",
-      description: "",
-      status: "todo",
-      _id: null,
-    });
+    setFormData({ title: "", description: "", status: "todo", _id: null });
   };
 
   const handleEditTask = (task) => {
-    // console.log("✏️ Edit task triggered:", task);
     setFormData({
       title: task.title || "",
       description: task.description || "",
@@ -611,125 +444,115 @@ const DragDropKanban = ({ projectId }) => {
   };
 
   const handleAddTask = (status = "todo") => {
-    // console.log("➕ Add task to column:", status);
-    setFormData({
-      title: "",
-      description: "",
-      status: status,
-      _id: null,
-    });
+    setFormData({ title: "", description: "", status, _id: null });
     setOpenDialog(true);
   };
 
-  /* Delete Task */
+  /* Delete */
   const handleDeleteTask = (taskId, status) => {
-    console.log(
-      "🗑️ DELETE TRIGGEREDddddddddddddssssssssssdddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd:",
-      {
-        taskId,
-        status,
-        currentTasks: tasks[status],
-      }
-    );
-
-    if (window.confirm("Are you sure you want to delete this task?")) {
-      const updatedTasks = {
-        ...tasks,
-        [status]: tasks[status].filter((task) => {
-          const shouldKeep = task._id !== taskId;
-          // console.log(`🔍 Checking task ${task._id}: ${shouldKeep ? "KEEP" : "DELETE"}`);
-          return shouldKeep;
-        }),
-      };
-
-      // console.log("✅ Tasks after deletion:", updatedTasks[status]);
-      saveAndMark(updatedTasks);
-      toast.success("Task deleted locally");
-    } else {
-      console.log("❌ Delete cancelled by user");
-    }
+    if (!window.confirm("Delete this task?")) return;
+    const updated = {
+      ...tasks,
+      [status]: tasks[status].filter((t) => t._id !== taskId),
+    };
+    saveAndMark(updated);
+    toast.success("Deleted locally");
   };
 
   /* Comments */
   const handleAddComment = (task) => {
-    // console.log("💬 Add comment to task:", task._id);
     setCommentTask(task);
     setCommentText("");
   };
 
   const submitComment = () => {
     if (!commentText.trim()) {
-      toast.error("Comment cannot be empty");
+      toast.error("Comment empty");
       return;
     }
-
-    // console.log("💬 Submitting comment:", commentText);
-
-    const updatedTasks = { ...tasks };
+    const updated = { ...tasks };
     const newComment = {
       text: commentText.trim(),
       user: { name: "You" },
       createdAt: new Date().toISOString(),
     };
-
-    Object.keys(updatedTasks).forEach((col) => {
-      updatedTasks[col] = updatedTasks[col].map((task) =>
-        task._id === commentTask._id
+    Object.keys(updated).forEach((col) => {
+      updated[col] = updated[col].map((t) =>
+        t._id === commentTask._id
           ? {
-              ...task,
-              comments: [...(task.comments || []), newComment],
+              ...t,
+              comments: [...(t.comments || []), newComment],
+              isLocal: true,
             }
-          : task
+          : t
       );
     });
-
-    saveAndMark(updatedTasks);
+    saveAndMark(updated);
     setCommentTask(null);
     setCommentText("");
-    toast.success("Comment added locally");
+    toast.success("Comment saved locally");
   };
 
-  /* Sync */
+  /* Sync to server - bulk update (replace server board) */
   const handleSyncToServer = async () => {
-    // console.log("🔄 Syncing to server...");
     setSyncing(true);
     try {
+      // flatten and send positions
       const allTasks = [
         ...tasks.todo.map((t, i) => ({ ...t, position: i })),
         ...tasks.inprogress.map((t, i) => ({ ...t, position: i })),
         ...tasks.done.map((t, i) => ({ ...t, position: i })),
-      ].map(({ isLocal, ...task }) => task); // Remove isLocal flag
+      ].map(({ isLocal, ...task }) => task); // strip isLocal marker
 
-      // console.log("📤 Sending tasks to server:", allTasks);
-
+      console.log("📤 Sync payload:", allTasks.length, "tasks");
       const { success, data } = await taskAPI.bulkUpdateTasks(
         projectId,
         allTasks
       );
-      if (success) {
+      if (success && data) {
         const normalized = {
           todo: data.todo || [],
           inprogress: data.inprogress || [],
           done: data.done || [],
         };
-        // console.log("✅ Server response:", normalized);
         setTasks(normalized);
         saveTasksToLocal(projectId, normalized);
         setHasUnsyncedChanges(false);
-        toast.success("Synced successfully!");
+        toast.success("Synced successfully");
+        console.log("✅ sync result", normalized);
+      } else {
+        throw new Error("sync returned failure");
       }
-    } catch (error) {
-      // console.error("❌ Sync failed:", error);
-      toast.error("Sync failed, tasks saved locally");
+    } catch (err) {
+      console.error("❌ sync error:", err);
+      toast.error("Sync failed — local changes preserved");
     } finally {
       setSyncing(false);
     }
   };
 
   const columns = [
-    { key: "todo", title: "To Do", color: "warning" },
-    { key: "inprogress", title: "In Progress", color: "info" },
-    { key: "done", title: "Done", color: "success" },
+    {
+      key: "todo",
+      title: "To Do",
+      bgStart: "#FFFAE6",
+      bgEnd: "#FFF7D6",
+      dot: "#FFA726",
+    },
+    {
+      key: "inprogress",
+      title: "In Progress",
+      bgStart: "#E8F7FF",
+      bgEnd: "#DFF3FF",
+      dot: "#29B6F6",
+    },
+    {
+      key: "done",
+      title: "Done",
+      bgStart: "#E8FFED",
+      bgEnd: "#DFFFE3",
+      dot: "#66BB6A",
+    },
   ];
 
   if (loading) {
@@ -750,7 +573,7 @@ const DragDropKanban = ({ projectId }) => {
         alignItems="center"
         mb={2}
       >
-        <Typography variant="h6">Project Board (Debug Mode)</Typography>
+        <Typography variant="h6">Project Board</Typography>
         <Box display="flex" gap={1}>
           <Button
             variant="outlined"
@@ -759,21 +582,19 @@ const DragDropKanban = ({ projectId }) => {
           >
             Add Task
           </Button>
-
-          {/* Debug Buttons */}
           <Button
             variant="outlined"
             color="secondary"
             startIcon={<BugReport />}
-            onClick={debugTasks}
+            onClick={() =>
+              console.table([...tasks.todo, ...tasks.inprogress, ...tasks.done])
+            }
           >
             Debug
           </Button>
-
-          <Button variant="outlined" color="secondary" onClick={addTestTask}>
+          <Button variant="outlined" onClick={addTestTask}>
             Add Test Task
           </Button>
-
           <Button
             variant="contained"
             color={hasUnsyncedChanges ? "secondary" : "primary"}
@@ -790,37 +611,22 @@ const DragDropKanban = ({ projectId }) => {
         </Box>
       </Box>
 
-      {/* Task Count Summary */}
+      {/* Counts */}
       <Box display="flex" gap={2} mb={2}>
+        <Chip label={`To Do: ${tasks.todo.length}`} />
+        <Chip label={`In Progress: ${tasks.inprogress.length}`} />
+        <Chip label={`Done: ${tasks.done.length}`} />
         <Chip
-          label={`To Do: ${tasks.todo.length}`}
-          color="warning"
-          variant="outlined"
-        />
-        <Chip
-          label={`In Progress: ${tasks.inprogress.length}`}
-          color="info"
-          variant="outlined"
-        />
-        <Chip
-          label={`Done: ${tasks.done.length}`}
-          color="success"
-          variant="outlined"
-        />
-        <Chip
-          label={hasUnsyncedChanges ? "Unsynced Changes" : "All Synced"}
+          label={hasUnsyncedChanges ? "Unsynced" : "All Synced"}
           color={hasUnsyncedChanges ? "secondary" : "primary"}
         />
       </Box>
 
-      {/* Kanban Board */}
+      {/* Board */}
       <DndContext
         sensors={sensors}
         collisionDetection={closestCenter}
-        onDragStart={(e) => {
-          // console.log("🎯 Drag Start:", e.active.id);
-          setActiveTask(e.active.id);
-        }}
+        onDragStart={(e) => setActiveTask(e.active.id)}
         onDragEnd={handleDragEnd}
       >
         <Box display="flex" gap={2} sx={{ overflowX: "auto", pb: 2 }}>
@@ -836,9 +642,10 @@ const DragDropKanban = ({ projectId }) => {
             />
           ))}
         </Box>
+
         <DragOverlay>
           {activeTask && (
-            <Card sx={{ width: 220, boxShadow: 6, opacity: 0.8 }}>
+            <Card sx={{ width: 220, boxShadow: 8, opacity: 0.9 }}>
               <CardContent>
                 <Typography variant="subtitle2">
                   {[...tasks.todo, ...tasks.inprogress, ...tasks.done].find(
@@ -851,12 +658,17 @@ const DragDropKanban = ({ projectId }) => {
         </DragOverlay>
       </DndContext>
 
-      {/* Add/Edit Task Dialog */}
+      {/* Add/Edit */}
       <Dialog
         open={openDialog}
         onClose={() => {
           setOpenDialog(false);
-          resetForm();
+          setFormData({
+            title: "",
+            description: "",
+            status: "todo",
+            _id: null,
+          });
         }}
         maxWidth="sm"
         fullWidth
@@ -904,7 +716,12 @@ const DragDropKanban = ({ projectId }) => {
             <Button
               onClick={() => {
                 setOpenDialog(false);
-                resetForm();
+                setFormData({
+                  title: "",
+                  description: "",
+                  status: "todo",
+                  _id: null,
+                });
               }}
             >
               Cancel
@@ -916,7 +733,7 @@ const DragDropKanban = ({ projectId }) => {
         </form>
       </Dialog>
 
-      {/* Comment Dialog */}
+      {/* Comment */}
       <Dialog
         open={!!commentTask}
         onClose={() => setCommentTask(null)}

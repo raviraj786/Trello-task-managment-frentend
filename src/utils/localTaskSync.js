@@ -1,35 +1,32 @@
-export const saveTasksToLocal = (projectId, tasks) => {
-  try {
-    const key = `tasks_${projectId}`;
-    localStorage.setItem(key, JSON.stringify(tasks));
-    console.log('Saved to local storage:', tasks);
-    return true;
-  } catch (error) {
-    console.error('Error saving to local storage:', error);
-    return false;
-  }
-};
+const prefix = "kanban_board_v1::";
 
-export const loadTasksFromLocal = (projectId) => {
+export function saveTasksToLocal(projectId, tasks) {
   try {
-    const key = `tasks_${projectId}`;
-    const data = localStorage.getItem(key);
-    const parsedData = data ? JSON.parse(data) : null;
-    console.log('Loaded from local storage:', parsedData);
-    return parsedData;
-  } catch (error) {
-    console.error('Error loading from local storage:', error);
+    localStorage.setItem(prefix + projectId, JSON.stringify(tasks));
+    console.log("localTaskSync: saved to localStorage", projectId);
+  } catch (err) {
+    console.error("localTaskSync: save error", err);
+  }
+}
+
+export function loadTasksFromLocal(projectId) {
+  try {
+    const raw = localStorage.getItem(prefix + projectId);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    console.log("localTaskSync: loaded from localStorage", projectId);
+    return parsed;
+  } catch (err) {
+    console.error("localTaskSync: load error", err);
     return null;
   }
-};
+}
 
-export const clearTasksFromLocal = (projectId) => {
+export function clearLocal(projectId) {
   try {
-    const key = `tasks_${projectId}`;
-    localStorage.removeItem(key);
-    return true;
-  } catch (error) {
-    console.error('Error clearing local storage:', error);
-    return false;
+    localStorage.removeItem(prefix + projectId);
+    console.log("localTaskSync: cleared", projectId);
+  } catch (err) {
+    console.error("localTaskSync: clear error", err);
   }
-};
+}
